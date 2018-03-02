@@ -10,7 +10,7 @@ function x = coleman_sun(A, b)
 %
 % Outputs:
 % x - the minimum norm least squares solution
-threshhold = 0.001;
+threshhold = 0.01;
 beta = 0.00025;
 [Q, R] = qr(A);
 diagonal_entries = abs(diag(R));
@@ -18,14 +18,18 @@ diagonal_entries(diagonal_entries==0) = [];
 w_max = max(diagonal_entries);
 w_min = min(diagonal_entries);
 lambda = beta * (w_min * w_min / w_max / w_max) * (w_max * w_max + 1) / 2;
-M = A' * A;
-d = A' * b;
-multiplicative_coefficient = (M + lambda * eye(size(M)))^(-1);
-current_x = multiplicative_coefficient * d;
+sz = size(A);
+m = sz(1);
+n = sz(2);
+C = [A; sqrt(lambda) * eye(n)];
+[Q_C, R_c] = qr(C, 0);
+Q_I = Q_C(1:m, 1:n);
+current_x = R_c^(-1) * (Q_I' * b);
 current_t = current_x;
 while normest(current_t) / normest(current_x) > threshhold
     t = lambda * current_t;
-    current_t = multiplicative_coefficient * t;
+    k = R_c' \ t;
+    current_t = R_c \ k;
     current_x = current_x + current_t;
 end
 x = current_x;
